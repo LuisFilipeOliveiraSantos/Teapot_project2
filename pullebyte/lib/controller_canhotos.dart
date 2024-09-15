@@ -8,7 +8,6 @@ import 'package:path/path.dart' as path;
 
 const uuid = Uuid();
 final FirebaseAuth _auth = FirebaseAuth.instance;
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final FirebaseStorage _storage = FirebaseStorage.instance;
 
 class Canhoto {
@@ -19,12 +18,61 @@ class Canhoto {
   String? pulleTimeEscolhidoID;
   String? pulleStatus;
   String? pulleImagem = 'https://via.placeholder.com/150';
+
+  Canhoto({
+    this.pulleTitulo,
+    this.pulleData,
+    this.pulleValor,
+    this.pulleTimeEscolhido,
+    this.pulleTimeEscolhidoID,
+    this.pulleStatus,
+    this.pulleImagem,
+  });
+}
+
+class CanhotosRepository {
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final FirebaseAuth auth = FirebaseAuth.instance;
+
+  Future<void> saveCanhotos(List<Map<String, dynamic>> canhotosList) async {
+    try {
+      User? user = auth.currentUser;
+      if (user != null) {
+        final docRef = firestore.collection('canhotos').doc(user.uid);
+        await docRef.set({'canhotosCadastrados': canhotosList}, SetOptions(merge: true));
+      }
+    } catch (e) {
+      throw Exception('Erro ao salvar canhotos no Firestore: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> loadCanhotos() async {
+    try {
+      User? user = auth.currentUser;
+      if (user != null) {
+        DocumentSnapshot doc = await firestore.collection('canhotos').doc(user.uid).get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>?;
+          if (data != null && data.containsKey('canhotosCadastrados')) {
+            return List<Map<String, dynamic>>.from(data['canhotosCadastrados']);
+          } else {
+            await firestore.collection('canhotos').doc(user.uid).update({'canhotosCadastrados': []});
+            return [];
+          }
+        }
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Erro ao carregar canhotos do Firestore: $e');
+    }
+  }
 }
 
 class CanhotosController extends ChangeNotifier {
+  final CanhotosRepository repository = CanhotosRepository();
   List<Map<String, dynamic>> canhotosList = [];
 
-  void addCanhoto({
+  Future<void> addCanhoto({
     required String pulleID,
     required String pulleTitulo,
     required Timestamp pulleData,
@@ -44,11 +92,11 @@ class CanhotosController extends ChangeNotifier {
       'pulleStatus': pulleStatus,
       'pulleImage': pulleImagem,
     });
-    _salvarCanhotosNoFirestore();
+    await repository.saveCanhotos(canhotosList);
     notifyListeners();
   }
 
-  Future<String> updateCanhotoPicture(File filePath, canhotoId) async {
+  Future<String> updateCanhotoPicture(File filePath, String canhotoId) async {
     var user = _auth.currentUser;
 
     if (user == null) {
@@ -71,63 +119,27 @@ class CanhotosController extends ChangeNotifier {
     }
   }
 
-  Future<void> _salvarCanhotosNoFirestore() async {
-    try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        final docRef = _firestore.collection('canhotos').doc(user.uid);
-
-        if (canhotosList.isEmpty) {
-          await docRef.set({'canhotosCadastrados': []}, SetOptions(merge: true));
-        } else {
-          await docRef.set({'canhotosCadastrados': canhotosList}, SetOptions(merge: true));
-        }
-      }
-    } catch (e) {
-      throw Exception('Erro ao salvar filtros no Firestore: $e');
-    }
-  }
-
   Future<void> carregarFiltrosDoFirestore() async {
     try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        DocumentSnapshot doc = await _firestore.collection('canhotos').doc(user.uid).get();
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>?;
-          if (data != null && data.containsKey('canhotosCadastrados')) {
-            List<dynamic> canhotosSalvos = data['canhotosCadastrados'];
-            canhotosList.clear();
-            canhotosList.addAll(canhotosSalvos.map((item) => Map<String, dynamic>.from(item)));
-          } else {
-            // Se o campo não existir, inicialize-o como uma lista vazia
-            await FirebaseFirestore.instance.collection('canhotos').doc(user.uid).update({
-              'canhotosCadastrados': [],
-            });
-            canhotosList.clear();
-          }
-        }
-      }
+      canhotosList = await repository.loadCanhotos();
+      notifyListeners();
     } catch (e) {
       throw Exception('Erro ao carregar filtros do Firestore: $e');
     }
-    notifyListeners();
   }
 
   void deleteCanhoto(String id) {
     canhotosList.removeWhere((canhoto) => canhoto['id'] == id);
     notifyListeners();
-    _salvarCanhotosNoFirestore(); // Salva a lista atualizada no Firestore
+    repository.saveCanhotos(canhotosList);
   }
 
   void editCanhoto(String id, Map<String, dynamic> data) {
-    // Encontre o índice do canhoto a ser editado
     int index = canhotosList.indexWhere((canhoto) => canhoto['id'] == id);
 
-    // Verifica se o canhoto com o ID fornecido existe
     if (index != -1) {
       canhotosList[index] = {
-        'id': id, // mantém o ID do canhoto
+        'id': id,
         'pulleTitle': data['pulleTitle'] ?? canhotosList[index]['pulleTitle'],
         'pulleDate': data['pulleDate'] ?? canhotosList[index]['pulleDate'],
         'pulleValue': data['pulleValue'] ?? canhotosList[index]['pulleValue'],
@@ -137,18 +149,10 @@ class CanhotosController extends ChangeNotifier {
         'pulleImage': data['pulleImage'] ?? canhotosList[index]['pulleImage'],
       };
 
-      // Notifica os ouvintes que a lista foi alterada
       notifyListeners();
-
-      // Salva a lista atualizada no Firestore
-      _salvarCanhotosNoFirestore();
+      repository.saveCanhotos(canhotosList);
     } else {
       throw Exception('Canhoto com ID $id não encontrado');
     }
   }
 }
-
-//  List<Map<String, dynamic>> get getCanhotos {
-//     return Map.from(canhotosList); // Retorna uma cópia para evitar modificações externas
-//   }
-

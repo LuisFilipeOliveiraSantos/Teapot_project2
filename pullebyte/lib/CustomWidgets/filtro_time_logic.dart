@@ -83,7 +83,7 @@ class FiltroTimeLogic extends ChangeNotifier {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'timesSelecionados': timesSelecionados});
+        await FirebaseFirestore.instance.collection('filtros').doc(user.uid).update({'timesSelecionados': timesSelecionados});
       }
     } catch (e) {
       throw Exception('Erro ao salvar filtros no Firestore: $e');
@@ -95,7 +95,7 @@ class FiltroTimeLogic extends ChangeNotifier {
     try {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        DocumentSnapshot doc = await FirebaseFirestore.instance.collection('filtros').doc(user.uid).get();
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>?;
           if (data != null && data.containsKey('timesSelecionados')) {

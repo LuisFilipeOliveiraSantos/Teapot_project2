@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pullebyte/theme/colors.dart';
-import 'package:intl/intl.dart'; // Add this line to import the intl package
+import 'package:intl/intl.dart'; 
 
-//Bom dia
 class TextFieldSample extends StatelessWidget {
   final String hintText;
   final bool isSenha;
@@ -30,7 +29,6 @@ class TextFieldSample extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    // Calcula a largura desejada em porcentagem da tela (ex: 70%)
     final width = screenWidth * inputWidth!;
     return Theme(
       data: ThemeData(

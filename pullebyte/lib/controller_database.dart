@@ -44,7 +44,7 @@ class DatabaseController {
     try {
       if (user?.displayName != name) {
         await user?.updateDisplayName(name);
-        await _firestore.collection('users').doc(user?.uid).update({
+        await _firestore.collection('filtros').doc(user?.uid).update({
           'userInfo.name': user?.displayName,
         });
         const SnackBar(
@@ -62,7 +62,7 @@ class DatabaseController {
     try {
       if (user?.email != email) {
         await user?.verifyBeforeUpdateEmail(email);
-        await _firestore.collection('users').doc(user?.uid).update({
+        await _firestore.collection('filtros').doc(user?.uid).update({
           'userInfo.email': user?.email,
         });
         const SnackBar(
@@ -81,9 +81,9 @@ class DatabaseController {
   Future<void> addUserInfo() async {
     try {
       var user = _auth.currentUser;
-      DocumentSnapshot snapshot = await _firestore.collection('users').doc(user?.uid).get();
+      DocumentSnapshot snapshot = await _firestore.collection('filtros').doc(user?.uid).get();
       if (!snapshot.exists) {
-        await _firestore.collection('users').doc(user?.uid).set({
+        await _firestore.collection('filtros').doc(user?.uid).set({
           'userInfo': {
             'name': user?.displayName,
             'email': user?.email,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:pullebyte/CustomWidgets/insghts_card.dart';
 import 'package:pullebyte/controller_canhotos.dart';
@@ -52,6 +53,11 @@ class InsightCardHolder extends StatelessWidget {
                 ? (canhoto['pulleValue'] as num).toDouble()
                 : max);
 
+    final formatter = NumberFormat.simpleCurrency(
+      locale: 'pt_BR',
+      decimalDigits: 2,
+    );
+
     final List<Map<String, String>> insightsData = [
       {
         'titulo': 'Pulles\nbatidas',
@@ -59,19 +65,19 @@ class InsightCardHolder extends StatelessWidget {
       },
       {
         'titulo': 'Lucro\nacumulado',
-        'conteudo': 'R\$ ${lucroAcumulado.toStringAsFixed(2)}',
+        'conteudo': formatter.format(lucroAcumulado),
       },
       {
         'titulo': 'Cotação\nmédia',
-        'conteudo': 'R\$ ${cotacaoMedia.toStringAsFixed(2)}',
+        'conteudo': formatter.format(cotacaoMedia),
       },
       {
         'titulo': 'Perdas\nacumuladas',
-        'conteudo': 'R\$ ${perdasAcumuladas.toStringAsFixed(2)}',
+        'conteudo': formatter.format(perdasAcumuladas),
       },
       {
         'titulo': 'Maior cotação\nganha',
-        'conteudo': 'R\$ ${maiorCotacaoGanha.toStringAsFixed(2)}',
+        'conteudo': formatter.format(maiorCotacaoGanha),
       },
     ];
 
